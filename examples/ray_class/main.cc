@@ -9,16 +9,14 @@
 #define FOCAL_LENGTH 1.0
 #define VIEWPORT_HEIGHT 2.0
 
-bool hit_sphere(const point3 &center, float radius, const ray &r)
+float hit_sphere(const point3 &center, float radius, const ray &r)
 {
     // ray-sphere intersection
     // a = B dot B
     // b = 2B dot (A - C)
     // c = (A - C) dot (A - C) - R^2
     // discriminant = b^2 - 4ac
-    // if discriminant < 0, no intersection
-    // if discriminant = 0, one intersection
-    // if discriminant > 0, two intersections
+    // if discriminant < 0, no intersection, discriminant = 0, one intersection, discriminant > 0, two intersections
     // if t > 0, the intersection is in front of the camera
     // if t < 0, the intersection is behind the camera
     // if t = 0, the intersection is on the camera
@@ -27,17 +25,27 @@ bool hit_sphere(const point3 &center, float radius, const ray &r)
     float b = 2.0 * dot(origin_to_center, r.direction());
     float c = dot(origin_to_center, origin_to_center) - radius * radius;
     float discriminant = b * b - 4 * a * c;
-    return (discriminant > 0);
+    if (discriminant < 0)
+    {
+        return -1.0;
+    }
+    else
+    {
+        return (-b - sqrt(discriminant)) / (2.0 * a);
+    }
 }
 
 color ray_color(const ray &r)
 {
     // if we hit the sphere, return the color of the sphere
-    point3 sphere_center(0, 0, -2);
+    point3 sphere_center(0, 0, -1);
     float sphere_radius = 0.5;
-    if (hit_sphere(sphere_center, sphere_radius, r))
+    float _hit_sphere = hit_sphere(sphere_center, sphere_radius, r);
+    if (_hit_sphere > 0.0)
     {
-        return color(0, 1, 0);
+        // surface normal
+        vec3 normal = unit_vector(r.at(_hit_sphere) - sphere_center);
+        return 0.5 * color(normal.x() + 1, normal.y() + 1, normal.z() + 1);
     }
     else
     {
