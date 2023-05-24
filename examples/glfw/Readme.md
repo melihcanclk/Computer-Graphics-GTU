@@ -1,0 +1,1 @@
+glad header must be located into /usr/local/include directory
