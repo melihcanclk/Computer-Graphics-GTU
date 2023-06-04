@@ -79,6 +79,8 @@ int main()
 
     Shader light_cube_shader = Shader("vs/light_cube.vs", "fs/light_cube.fs");
 
+    Shader material_cube_shader = Shader("vs/material.vs", "fs/material.fs");
+
     // set up vertex data (and buffer(s)) and configure vertex attributes
     // ------------------------------------------------------------------
     float vertices[] = {
@@ -173,6 +175,49 @@ int main()
 
     };
 
+    float material_cube[] = {
+        -0.5f, -0.5f, -0.5f, 0.0f, 0.0f, -1.0f,
+        0.5f, -0.5f, -0.5f, 0.0f, 0.0f, -1.0f,
+        0.5f, 0.5f, -0.5f, 0.0f, 0.0f, -1.0f,
+        0.5f, 0.5f, -0.5f, 0.0f, 0.0f, -1.0f,
+        -0.5f, 0.5f, -0.5f, 0.0f, 0.0f, -1.0f,
+        -0.5f, -0.5f, -0.5f, 0.0f, 0.0f, -1.0f,
+
+        -0.5f, -0.5f, 0.5f, 0.0f, 0.0f, 1.0f,
+        0.5f, -0.5f, 0.5f, 0.0f, 0.0f, 1.0f,
+        0.5f, 0.5f, 0.5f, 0.0f, 0.0f, 1.0f,
+        0.5f, 0.5f, 0.5f, 0.0f, 0.0f, 1.0f,
+        -0.5f, 0.5f, 0.5f, 0.0f, 0.0f, 1.0f,
+        -0.5f, -0.5f, 0.5f, 0.0f, 0.0f, 1.0f,
+
+        -0.5f, 0.5f, 0.5f, -1.0f, 0.0f, 0.0f,
+        -0.5f, 0.5f, -0.5f, -1.0f, 0.0f, 0.0f,
+        -0.5f, -0.5f, -0.5f, -1.0f, 0.0f, 0.0f,
+        -0.5f, -0.5f, -0.5f, -1.0f, 0.0f, 0.0f,
+        -0.5f, -0.5f, 0.5f, -1.0f, 0.0f, 0.0f,
+        -0.5f, 0.5f, 0.5f, -1.0f, 0.0f, 0.0f,
+
+        0.5f, 0.5f, 0.5f, 1.0f, 0.0f, 0.0f,
+        0.5f, 0.5f, -0.5f, 1.0f, 0.0f, 0.0f,
+        0.5f, -0.5f, -0.5f, 1.0f, 0.0f, 0.0f,
+        0.5f, -0.5f, -0.5f, 1.0f, 0.0f, 0.0f,
+        0.5f, -0.5f, 0.5f, 1.0f, 0.0f, 0.0f,
+        0.5f, 0.5f, 0.5f, 1.0f, 0.0f, 0.0f,
+
+        -0.5f, -0.5f, -0.5f, 0.0f, -1.0f, 0.0f,
+        0.5f, -0.5f, -0.5f, 0.0f, -1.0f, 0.0f,
+        0.5f, -0.5f, 0.5f, 0.0f, -1.0f, 0.0f,
+        0.5f, -0.5f, 0.5f, 0.0f, -1.0f, 0.0f,
+        -0.5f, -0.5f, 0.5f, 0.0f, -1.0f, 0.0f,
+        -0.5f, -0.5f, -0.5f, 0.0f, -1.0f, 0.0f,
+
+        -0.5f, 0.5f, -0.5f, 0.0f, 1.0f, 0.0f,
+        0.5f, 0.5f, -0.5f, 0.0f, 1.0f, 0.0f,
+        0.5f, 0.5f, 0.5f, 0.0f, 1.0f, 0.0f,
+        0.5f, 0.5f, 0.5f, 0.0f, 1.0f, 0.0f,
+        -0.5f, 0.5f, 0.5f, 0.0f, 1.0f, 0.0f,
+        -0.5f, 0.5f, -0.5f, 0.0f, 1.0f, 0.0f};
+
     // world space positions of our cubes
     glm::vec3 cubePositions[] = {
         glm::vec3(0.0f, 0.0f, 0.0f),
@@ -216,6 +261,24 @@ int main()
 
     glBindBuffer(GL_ARRAY_BUFFER, light_cube_VBO);                                                         // bind buffer to GL_ARRAY_BUFFER
     glBufferData(GL_ARRAY_BUFFER, sizeof(light_cube_coordinates), light_cube_coordinates, GL_STATIC_DRAW); // copy vertices to buffer
+
+    // position attribute
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void *)0); // tell opengl how to interpret vertex data
+    glEnableVertexAttribArray(0);                                                  // enable vertex attribute
+
+    // normal attribute
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void *)(3 * sizeof(float))); // tell opengl how to interpret vertex data
+    glEnableVertexAttribArray(1);                                                                    // enable vertex attribute
+
+    // material cube
+    unsigned int material_cube_VBO, material_cube_VAO;
+    glGenVertexArrays(1, &material_cube_VAO);
+    glGenBuffers(1, &material_cube_VBO); // generate buffer id
+
+    glBindVertexArray(material_cube_VAO);
+
+    glBindBuffer(GL_ARRAY_BUFFER, material_cube_VBO);                                    // bind buffer to GL_ARRAY_BUFFER
+    glBufferData(GL_ARRAY_BUFFER, sizeof(material_cube), material_cube, GL_STATIC_DRAW); // copy vertices to buffer
 
     // position attribute
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void *)0); // tell opengl how to interpret vertex data
@@ -337,6 +400,43 @@ int main()
 
             glDrawArrays(GL_TRIANGLES, 0, 36);
         }
+
+        // render material cube
+        material_cube_shader.use();
+        material_cube_shader.setVec3("light.position", lightPos);
+        material_cube_shader.setVec3("viewPos", camera.Position);
+
+        // light properties
+        glm::vec3 lightColor;
+        lightColor.x = sin(static_cast<float>(glfwGetTime() * 2.0f));
+        lightColor.y = sin(static_cast<float>(glfwGetTime() * 0.7f));
+        lightColor.z = sin(static_cast<float>(glfwGetTime() * 1.3f));
+        glm::vec3 diffuseColor = lightColor * glm::vec3(0.5f);   // decrease the influence
+        glm::vec3 ambientColor = diffuseColor * glm::vec3(0.2f); // low influence
+        material_cube_shader.setVec3("light.ambient", ambientColor);
+        material_cube_shader.setVec3("light.diffuse", diffuseColor);
+        material_cube_shader.setVec3("light.specular", 1.0f, 1.0f, 1.0f);
+
+        // material properties
+        material_cube_shader.setVec3("material.ambient", 1.0f, 0.5f, 0.31f);
+        material_cube_shader.setVec3("material.diffuse", 1.0f, 0.5f, 0.31f);
+        material_cube_shader.setVec3("material.specular", 0.5f, 0.5f, 0.5f);
+        material_cube_shader.setFloat("material.shininess", 32.0f);
+
+        // view/projection transformations
+        projection = glm::perspective(glm::radians(camera.Zoom), static_cast<float>(SCR_WIDTH) / static_cast<float>(SCR_HEIGHT), 0.1f, 100.0f);
+        view = camera.GetViewMatrix();
+        material_cube_shader.setMat4("projection", projection);
+        material_cube_shader.setMat4("view", view);
+
+        // world transformation with moved by 1.0f on x-axis
+        model = glm::mat4(1.0f);
+        model = glm::translate(model, glm::vec3(2.0f, 0.0f, 0.0));
+        material_cube_shader.setMat4("model", model);
+
+        // render the cube
+        glBindVertexArray(material_cube_VAO);
+        glDrawArrays(GL_TRIANGLES, 0, 36);
 
         // render light cube
         light_cube_shader.use();
