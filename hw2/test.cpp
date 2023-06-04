@@ -76,16 +76,24 @@ int main()
     glEnable(GL_DEPTH_TEST);
     // build and compile our shader zprogram
     // ------------------------------------
-    Shader ourShader("vs/camera.vs", "fs/camera.fs");
-
+    Shader shader("vs/shader.vs", "fs/shader.fs");
+    Shader camera_shader("vs/camera.vs", "fs/camera.fs");
     Shader light_cube_shader = Shader("vs/light_cube.vs", "fs/light_cube.fs");
-
     Shader material_cube_shader = Shader("vs/material.vs", "fs/material.fs");
-
     Shader lightning_map_shader = Shader("vs/lightning_map.vs", "fs/lightning_map.fs");
+
+    Shader phong_shader = Shader("vs/phong_shading.vs", "fs/phong_shading.fs");
 
     // set up vertex data (and buffer(s)) and configure vertex attributes
     // ------------------------------------------------------------------
+
+    float triangle_vertices[] = {
+        // positions         // colors
+        0.5f, -0.5f, 0.0f, 1.0f, 0.0f, 0.0f,  // bottom right
+        -0.5f, -0.5f, 0.0f, 0.0f, 1.0f, 0.0f, // bottom left
+        0.0f, 0.5f, 0.0f, 0.0f, 0.0f, 1.0f    // top
+    };
+
     float vertices[] = {
         // positions(3), texture coords(2), normals(3)
         // front
@@ -277,6 +285,24 @@ int main()
         glm::vec3(1.5f, 0.2f, -1.5f),
         glm::vec3(-1.3f, 1.0f, -1.5f)};
 
+    // triangle
+    unsigned int triangle_VBO, triangle_VAO;
+    glGenVertexArrays(1, &triangle_VAO);
+    glGenBuffers(1, &triangle_VBO); // generate buffer id
+
+    glBindVertexArray(triangle_VAO);
+
+    glBindBuffer(GL_ARRAY_BUFFER, triangle_VBO);                                                 // bind buffer to GL_ARRAY_BUFFER
+    glBufferData(GL_ARRAY_BUFFER, sizeof(triangle_vertices), triangle_vertices, GL_STATIC_DRAW); // copy vertices to buffer
+
+    // position attribute
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void *)0); // tell opengl how to interpret vertex data
+    glEnableVertexAttribArray(0);                                                  // enable vertex attribute
+
+    // color attribute
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void *)(3 * sizeof(float))); // tell opengl how to interpret vertex data
+    glEnableVertexAttribArray(1);                                                                    // enable vertex attribute
+
     unsigned int VBO, VAO;
     glGenVertexArrays(1, &VAO);
     glGenBuffers(1, &VBO); // generate buffer id
@@ -364,6 +390,24 @@ int main()
     lightning_map_shader.setInt("material.diffuse", 0);
     lightning_map_shader.setInt("material.specular", 1);
 
+    // material cube
+    unsigned int phong_cube_VBO, phong_cube_VAO;
+    glGenVertexArrays(1, &phong_cube_VAO);
+    glGenBuffers(1, &phong_cube_VBO); // generate buffer id
+
+    glBindVertexArray(phong_cube_VAO);
+
+    glBindBuffer(GL_ARRAY_BUFFER, phong_cube_VBO);                                       // bind buffer to GL_ARRAY_BUFFER
+    glBufferData(GL_ARRAY_BUFFER, sizeof(material_cube), material_cube, GL_STATIC_DRAW); // copy vertices to buffer
+
+    // position attribute
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void *)0); // tell opengl how to interpret vertex data
+    glEnableVertexAttribArray(0);                                                  // enable vertex attribute
+
+    // normal attribute
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void *)(3 * sizeof(float))); // tell opengl how to interpret vertex data
+    glEnableVertexAttribArray(1);                                                                    // enable vertex attribute
+
     // load and create a texture
     // -------------------------
     unsigned int texture1, texture2;
@@ -417,9 +461,9 @@ int main()
 
     // tell opengl for each sampler to which texture unit it belongs to (only has to be done once)
     // -------------------------------------------------------------------------------------------
-    ourShader.use();
-    ourShader.setInt("texture1", 0);
-    ourShader.setInt("texture2", 1);
+    camera_shader.use();
+    camera_shader.setInt("texture1", 0);
+    camera_shader.setInt("texture2", 1);
 
     // render loop
     // -----------
@@ -450,18 +494,18 @@ int main()
         glBindTexture(GL_TEXTURE_2D, texture2);
 
         // activate shader
-        ourShader.use();
+        camera_shader.use();
 
-        ourShader.setVec3("lightPos", lightPos);
-        ourShader.setVec3("viewPos", camera.Position);
+        camera_shader.setVec3("lightPos", lightPos);
+        camera_shader.setVec3("viewPos", camera.Position);
 
         glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), static_cast<float>(SCR_WIDTH) / static_cast<float>(SCR_HEIGHT), 0.1f, 100.0f);
         glm::mat4 view = camera.GetViewMatrix();
-        ourShader.setMat4("projection", projection);
-        ourShader.setMat4("view", view);
+        camera_shader.setMat4("projection", projection);
+        camera_shader.setMat4("view", view);
 
         glm::mat4 model = glm::mat4(1.0f);
-        ourShader.setMat4("model", model);
+        camera_shader.setMat4("model", model);
 
         // render boxes
         glBindVertexArray(VAO);
@@ -474,7 +518,7 @@ int main()
             model = glm::rotate(model, glm::radians(angle), glm::vec3(0.5f, 1.0f, 0.0f)); // rotate around (0.5f, 1.0f, 0.0f)
             // scale cubes differently
             model = glm::scale(model, glm::vec3(0.1f * (i + 1)));
-            ourShader.setMat4("model", model);
+            camera_shader.setMat4("model", model);
 
             glDrawArrays(GL_TRIANGLES, 0, 36);
         }
@@ -514,6 +558,26 @@ int main()
 
         // render the cube
         glBindVertexArray(material_cube_VAO);
+        glDrawArrays(GL_TRIANGLES, 0, 36);
+
+        // render phong cube, it has lightColor and objectColor
+        phong_shader.use();
+        phong_shader.setVec3("lightColor", 1.0f, 1.0f, 1.0f);
+        phong_shader.setVec3("objectColor", 1.0f, 0.5f, 0.31f);
+
+        // view/projection transformations
+        projection = glm::perspective(glm::radians(camera.Zoom), static_cast<float>(SCR_WIDTH) / static_cast<float>(SCR_HEIGHT), 0.1f, 100.0f);
+        view = camera.GetViewMatrix();
+        phong_shader.setMat4("projection", projection);
+        phong_shader.setMat4("view", view);
+
+        // world transformation
+        model = glm::mat4(1.0f);
+        model = glm::translate(model, glm::vec3(-2.0f, 0.0f, 0.0));
+        phong_shader.setMat4("model", model);
+
+        // render the cube
+        glBindVertexArray(phong_cube_VAO);
         glDrawArrays(GL_TRIANGLES, 0, 36);
 
         // render lightning map obj
@@ -563,6 +627,42 @@ int main()
         glBindVertexArray(light_cube_VAO);
         glDrawArrays(GL_TRIANGLES, 0, 36);
 
+        // render phong cube
+        phong_shader.use();
+        phong_shader.setVec3("light.position", lightPos);
+        phong_shader.setVec3("viewPos", camera.Position);
+
+        // light properties
+        phong_shader.setVec3("light.ambient", 0.2f, 0.2f, 0.2f);
+        phong_shader.setVec3("light.diffuse", 0.5f, 0.5f, 0.5f);
+        phong_shader.setVec3("light.specular", 1.0f, 1.0f, 1.0f);
+
+        // material properties
+        phong_shader.setFloat("material.shininess", 32.0f);
+
+        // view/projection transformations
+        projection = glm::perspective(glm::radians(camera.Zoom), static_cast<float>(SCR_WIDTH) / static_cast<float>(SCR_HEIGHT), 0.1f, 100.0f);
+        view = camera.GetViewMatrix();
+        phong_shader.setMat4("projection", projection);
+        phong_shader.setMat4("view", view);
+
+        // world transformation
+        model = glm::mat4(1.0f);
+        model = glm::translate(model, glm::vec3(-2.0f, 0.0f, 0.0));
+        phong_shader.setMat4("model", model);
+
+        // bind diffuse map
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, diffuseMap);
+
+        // bind specular map
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, specularMap);
+
+        // render the cube
+        glBindVertexArray(material_cube_VAO);
+        glDrawArrays(GL_TRIANGLES, 0, 36);
+
         // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
         // -------------------------------------------------------------------------------
         glfwSwapBuffers(window);
@@ -595,6 +695,10 @@ void processInput(GLFWwindow *window)
         camera.ProcessKeyboard(LEFT, deltaTime);
     if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
         camera.ProcessKeyboard(RIGHT, deltaTime);
+    if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS)
+        camera.ProcessKeyboard(UP, deltaTime);
+    if (glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS)
+        camera.ProcessKeyboard(DOWN, deltaTime);
 }
 
 // glfw: whenever the window size changed (by OS or user resize) this callback function executes
