@@ -23,7 +23,7 @@ const unsigned int SCR_WIDTH = 1024;
 const unsigned int SCR_HEIGHT = 720;
 
 // camera
-Camera camera(glm::vec3(0.0f, 0.0f, 3.0f));
+Camera camera(glm::vec3(0.0f, 1.0f, 7.0f));
 float lastX = SCR_WIDTH / 2.0f;
 float lastY = SCR_HEIGHT / 2.0f;
 bool firstMouse = true;
@@ -50,16 +50,18 @@ int main()
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 #endif
 
-    // glfw window creation
+    // glfw window creation fullscreen
     // --------------------
-    GLFWwindow *window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "Melihcan Cilek", NULL, NULL);
+    GLFWmonitor *monitor = glfwGetPrimaryMonitor();
+    const GLFWvidmode *mode = glfwGetVideoMode(monitor);
+    GLFWwindow *window = glfwCreateWindow(mode->width, mode->height, "Melihcan Cilek", monitor, NULL);
     if (window == NULL)
     {
         std::cout << "Failed to create GLFW window" << std::endl;
         glfwTerminate();
         return -1;
     }
-    glfwMakeContextCurrent(window);
+    glfwMakeContextCurrent(window); // make the context of the specified window current on the calling thread.
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
     glfwSetCursorPosCallback(window, mouse_callback);
     glfwSetScrollCallback(window, scroll_callback);
@@ -291,14 +293,14 @@ int main()
 
     // world space positions of our cubes
     glm::vec3 cubePositions[] = {
-        glm::vec3(0.0f, 0.0f, 0.0f),
+        glm::vec3(0.0f, 2.0f, 0.0f),
         glm::vec3(2.0f, 5.0f, -15.0f),
         glm::vec3(-1.5f, 2.2f, -2.5f),
         glm::vec3(-3.8f, 2.0f, -12.3f),
-        glm::vec3(2.4f, 0.4f, -3.5f),
+        glm::vec3(2.4f, 2.4f, -3.5f),
         glm::vec3(-1.7f, 3.0f, -7.5f),
-        glm::vec3(1.5f, 2.0f, -2.5f),
-        glm::vec3(1.5f, 0.2f, -1.5f),
+        glm::vec3(1.5f, 2.0f, -7.5f),
+        glm::vec3(1.5f, 2.2f, -1.5f),
         glm::vec3(-1.3f, 1.0f, -1.5f)};
 
     // positions of the point lights
@@ -442,6 +444,9 @@ int main()
     // texture 4
     unsigned int container_specular = loadTexture("assets/container2_specular.png");
 
+    // texture 5
+    unsigned int grass = loadTexture("assets/grass.jpg");
+
     // init texture units
     camera_shader.use();
     glUniform1i(glGetUniformLocation(camera_shader.ID, "texture1"), 0);
@@ -463,7 +468,7 @@ int main()
         lastFrame = currentFrame;
 
         // print fps
-        std::cout << 1 / deltaTime << std::endl;
+        // std::cout << 1 / deltaTime << std::endl;
 
         // input
         // -----
@@ -473,6 +478,30 @@ int main()
         // ------
         glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+        // draw a cube with only vertices
+        {
+            camera_shader.use();
+            camera_shader.setMat4("view", camera.GetViewMatrix());
+            camera_shader.setMat4("projection", glm::perspective(
+                                                    glm::radians(camera.Zoom),
+                                                    static_cast<float>(SCR_WIDTH) / static_cast<float>(SCR_HEIGHT),
+                                                    0.1f, 100.0f));
+
+            // bind textures on corresponding texture units
+            glActiveTexture(GL_TEXTURE0); // activate the texture unit first before binding texture
+            glBindTexture(GL_TEXTURE_2D, grass);
+
+            // render container
+            glBindVertexArray(cube_VAO);
+            // calculate the model matrix for each object and pass it to shader before drawing
+            glm::mat4 model = glm::mat4(1.0f); // make sure to initialize matrix to identity matrix first
+            model = glm::scale(model, glm::vec3(50.0f, 50.0f, 50.0f));
+            model = glm::translate(model, glm::vec3(0.0f, -0.5f, 0.0f));
+            camera_shader.setMat4("model", model);
+
+            glDrawArrays(GL_TRIANGLES, 0, 36);
+        }
 
         // triangle
         {
@@ -532,7 +561,7 @@ int main()
 
             // world transformation
             glm::mat4 model = glm::mat4(1.0f); // make sure to initialize matrix to identity matrix first
-            model = glm::translate(model, glm::vec3(1.0f, -1.0f, 2.0f));
+            model = glm::translate(model, glm::vec3(1.0f, 1.0f, 4.0f));
             float angle = 20.0f * static_cast<float>(glfwGetTime());
             model = glm::rotate(model, glm::radians(angle), glm::vec3(1.0f, 0.3f, 0.5f)); // rotate the cube
             lightning_shader.setMat4("model", model);
@@ -983,7 +1012,7 @@ int main()
     glfwTerminate();
     return 0;
 }
-    
+
 // process all input: query GLFW whether relevant keys are pressed/released this frame and react accordingly
 // ---------------------------------------------------------------------------------------------------------
 void processInput(GLFWwindow *window)

@@ -70,7 +70,37 @@ public:
 
     void ProcessKeyboard(Camera_Movement direction, float deltaTime)
     {
+        float limit_min = 0.0f;
+        float limit_max = 25.0f;
+
+        float tolerance = 0.2f;
+
         float velocity = MovementSpeed * deltaTime;
+        if (Position.x < limit_min + tolerance)
+        {
+            Position.x = limit_min + tolerance;
+        }
+        if (Position.x > limit_max - tolerance)
+        {
+            Position.x = limit_max - tolerance;
+        }
+        if (Position.y < limit_min + tolerance)
+        {
+            Position.y = limit_min + tolerance;
+        }
+        if (Position.y > limit_max - tolerance)
+        {
+            Position.y = limit_max - tolerance;
+        }
+        if (Position.z < limit_min + tolerance)
+        {
+            Position.z = limit_min + tolerance;
+        }
+        if (Position.z > limit_max - tolerance)
+        {
+            Position.z = limit_max - tolerance;
+        }
+
         if (direction == FORWARD)
             Position += Front * velocity;
         if (direction == BACKWARD)
@@ -83,7 +113,8 @@ public:
             Position += Up * velocity;
         if (direction == DOWN)
             Position -= Up * velocity;
-            
+
+        std::cout << Position.x << " " << Position.y << " " << Position.z << std::endl;
     }
 
     // processes input received from a mouse input system. Expects the offset value in both the x and y direction.
