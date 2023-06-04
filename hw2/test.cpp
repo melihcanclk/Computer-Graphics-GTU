@@ -36,7 +36,7 @@ float lastFrame = 0.0f;
 // lighting
 glm::vec3 lightPos1(1.2f, 1.0f, 2.0f);
 
-glm::vec3 lightPos2(8.2f, 1.0f, 2.0f);
+glm::vec3 lightPos2(7.2f, 4.0f, 2.0f);
 
 bool isModelArrayFull = false;
 
@@ -774,7 +774,7 @@ int main()
 
             // world transformation
             glm::mat4 model = glm::mat4(1.0f); // make sure to initialize matrix to identity matrix first
-            model = glm::translate(model, glm::vec3(7.0f, 3.0f, 2.0f));
+            model = glm::translate(model, glm::vec3(7.0f, 6.0f, 2.0f));
             float angle = 20.0f * static_cast<float>(glfwGetTime());
             model = glm::rotate(model, glm::radians(angle), glm::vec3(1.0f, 0.3f, 0.5f)); // rotate the cube
             light_directional_shader.setMat4("model", model);
@@ -822,7 +822,7 @@ int main()
 
             // world transformation
             glm::mat4 model = glm::mat4(1.0f);
-            glm::vec3 pos(8.9f, 2.0f, 2.0f);
+            glm::vec3 pos(8.9f, 5.0f, 2.0f);
             model = glm::translate(model, pos);
             float angle = 20.0f * static_cast<float>(glfwGetTime());
             model = glm::rotate(model, glm::radians(angle), pos); // rotate the cube
@@ -846,7 +846,7 @@ int main()
         // spot light with lightPos2
         {
             light_spot_shader.use();
-            glm::vec3 pos(8.9f, -1.0f, 2.0f);
+            glm::vec3 pos(7.9f, 2.0f, 2.0f);
             light_spot_shader.setVec3("light.position", lightPos2);
             light_spot_shader.setVec3("light.direction", glm::normalize(pos - lightPos2));
             light_spot_shader.setFloat("light.cutOff", glm::cos(glm::radians(12.5f)));
@@ -974,7 +974,7 @@ int main()
             glActiveTexture(GL_TEXTURE0); // activate the texture unit first before binding texture
             glBindTexture(GL_TEXTURE_2D, container_2);
 
-            glm::vec3 pos(12.9f, -1.0f, 2.0f);
+            glm::vec3 pos(12.9f, 1.0f, 2.0f);
 
             unsigned int num_of_objects = 5;
             for (unsigned int i = 0; i < num_of_objects; i++)
