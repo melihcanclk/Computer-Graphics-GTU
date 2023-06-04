@@ -6,6 +6,7 @@
 #include "glm/glm/gtc/matrix_transform.hpp"
 
 #include <vector>
+#include <queue>
 
 // Defines several possible options for camera movement. Used as abstraction to stay away from window-system specific input methods
 enum Camera_Movement
@@ -21,9 +22,9 @@ enum Camera_Movement
 // Default camera values
 const float YAW = -90.0f;
 const float PITCH = 0.0f;
-const float SPEED = 2.5f;
+const float SPEED = 0.5f;
 const float SENSITIVITY = 0.1f;
-const float ZOOM = 25.0f;
+const float ZOOM = 75.0f;
 
 // An abstract camera class that processes input and calculates the corresponding Euler Angles, Vectors and Matrices for use in OpenGL
 class Camera
@@ -68,7 +69,7 @@ public:
         return glm::lookAt(Position, Position + Front, Up);
     }
 
-    void ProcessKeyboard(Camera_Movement direction, float deltaTime)
+    void ProcessKeyboard(Camera_Movement direction, float deltaTime, std::queue<glm::mat4> modelQueue)
     {
         float limit_min_y = 0.0f;
         float limit_min_other = -25.0f;
@@ -77,35 +78,89 @@ public:
         float tolerance = 0.2f;
 
         float velocity = MovementSpeed * deltaTime;
-        if (Position.x > limit_max - tolerance)
-            Position.x = limit_max - tolerance;
-        if (Position.x < limit_min_other + tolerance)
-            Position.x = limit_min_other + tolerance;
-        if (Position.y > limit_max - tolerance)
-            Position.y = limit_max - tolerance;
-        if (Position.y < limit_min_y + tolerance)
-            Position.y = limit_min_y + tolerance;
-        if (Position.z > limit_max - tolerance)
-            Position.z = limit_max - tolerance;
-        if (Position.z < limit_min_other + tolerance)
-            Position.z = limit_min_other + tolerance;
 
-        if (direction == FORWARD)
-            Position += Front * velocity;
-        if (direction == BACKWARD)
-            Position -= Front * velocity;
-        if (direction == LEFT)
-            Position -= Right * velocity;
-        if (direction == RIGHT)
-            Position += Right * velocity;
-        if (direction == UP)
-            Position += Up * velocity;
-        if (direction == DOWN)
-            Position -= Up * velocity;
+        // traverse queue
+        std::queue<glm::mat4> tempQueue = modelQueue;
+        while (!tempQueue.empty())
+        {
+            glm::mat4 model = tempQueue.front();
+            tempQueue.pop();
+
+            glm::vec3 modelPos = glm::vec3(model[3][0], model[3][1], model[3][2]);
+            // get scale of model
+            glm::vec3 scale = glm::vec3(model[0][0], model[1][1], model[2][2]);
+            // get max scale
+            float maxScale = scale.x;
+            if (scale.y > maxScale)
+                maxScale = scale.y;
+            if (scale.z > maxScale)
+                maxScale = scale.z;
+
+            // check if camera is within model with tolerance
+            if (Position.x > modelPos.x - maxScale - tolerance && Position.x < modelPos.x + maxScale + tolerance &&
+                Position.y > modelPos.y - maxScale - tolerance && Position.y < modelPos.y + maxScale + tolerance &&
+                Position.z > modelPos.z - maxScale - tolerance && Position.z < modelPos.z + maxScale + tolerance)
+            {
+                // move camera out of the model
+                if (Position.x > modelPos.x - maxScale - tolerance && Position.x < modelPos.x + maxScale + tolerance)
+                {
+                    if (Position.x > modelPos.x)
+                        Position.x = modelPos.x + maxScale + tolerance;
+                    else
+                        Position.x = modelPos.x - maxScale - tolerance;
+                }
+                if (Position.y > modelPos.y - maxScale - tolerance && Position.y < modelPos.y + maxScale + tolerance)
+                {
+                    if (Position.y > modelPos.y)
+                        Position.y = modelPos.y + maxScale + tolerance;
+                    else
+                        Position.y = modelPos.y - maxScale - tolerance;
+                }
+                if (Position.z > modelPos.z - maxScale - tolerance && Position.z < modelPos.z + maxScale + tolerance)
+                {
+                    if (Position.z > modelPos.z)
+                        Position.z = modelPos.z + maxScale + tolerance;
+                    else
+                        Position.z = modelPos.z - maxScale - tolerance;
+                }
+            }
+            else
+            {
+
+                if (Position.x > limit_max - tolerance)
+                    Position.x = limit_max - tolerance;
+                if (Position.x < limit_min_other + tolerance)
+                    Position.x = limit_min_other + tolerance;
+                if (Position.y > limit_max - tolerance)
+                    Position.y = limit_max - tolerance;
+                if (Position.y < limit_min_y + tolerance)
+                    Position.y = limit_min_y + tolerance;
+                if (Position.z > limit_max - tolerance)
+                    Position.z = limit_max - tolerance;
+                if (Position.z < limit_min_other + tolerance)
+                    Position.z = limit_min_other + tolerance;
+
+                if (direction == FORWARD)
+                    Position += Front * velocity;
+                if (direction == BACKWARD)
+                    Position -= Front * velocity;
+                if (direction == LEFT)
+                    Position -= Right * velocity;
+                if (direction == RIGHT)
+                    Position += Right * velocity;
+                if (direction == UP)
+                    Position += Up * velocity;
+                if (direction == DOWN)
+                    Position -= Up * velocity;
+            }
+        }
+
+        // std::cout << Position.x << " " << Position.y << " " << Position.z << std::endl;
     }
 
     // processes input received from a mouse input system. Expects the offset value in both the x and y direction.
-    void ProcessMouseMovement(float xoffset, float yoffset, GLboolean constrainPitch = true)
+    void
+    ProcessMouseMovement(float xoffset, float yoffset, GLboolean constrainPitch = true)
     {
         xoffset *= MouseSensitivity;
         yoffset *= MouseSensitivity;
@@ -132,8 +187,8 @@ public:
         Zoom -= (float)yoffset;
         if (Zoom < 1.0f)
             Zoom = 1.0f;
-        if (Zoom > 45.0f)
-            Zoom = 45.0f;
+        if (Zoom >= 90.0f)
+            Zoom = 90.0f;
     }
 
 private:

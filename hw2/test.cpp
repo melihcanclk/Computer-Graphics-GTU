@@ -11,6 +11,7 @@
 #include "camera.h"
 
 #include <iostream>
+#include <queue>
 
 void framebuffer_size_callback(GLFWwindow *window, int width, int height);
 void mouse_callback(GLFWwindow *window, double xpos, double ypos);
@@ -37,6 +38,10 @@ glm::vec3 lightPos1(1.2f, 1.0f, 2.0f);
 
 glm::vec3 lightPos2(8.2f, 1.0f, 2.0f);
 
+bool isModelArrayFull = false;
+
+std::queue<glm::mat4> modelQueue;
+
 int main()
 {
     // glfw: initialize and configure
@@ -54,7 +59,8 @@ int main()
     // --------------------
     GLFWmonitor *monitor = glfwGetPrimaryMonitor();
     const GLFWvidmode *mode = glfwGetVideoMode(monitor);
-    GLFWwindow *window = glfwCreateWindow(mode->width, mode->height, "Melihcan Cilek", monitor, NULL);
+    GLFWwindow *window = glfwCreateWindow(mode->width, mode->height, "LearnOpenGL", monitor, NULL);
+    // GLFWwindow *window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "LearnOpenGL", NULL, NULL);
     if (window == NULL)
     {
         std::cout << "Failed to create GLFW window" << std::endl;
@@ -306,7 +312,7 @@ int main()
     // positions of the point lights
     glm::vec3 pointLightPositions[] = {
         glm::vec3(0.7f, 0.2f, 2.0f),
-        glm::vec3(2.3f, -3.3f, -4.0f),
+        glm::vec3(2.3f, 3.3f, -4.0f),
         glm::vec3(-4.0f, 2.0f, -12.0f),
         glm::vec3(0.0f, 0.0f, -3.0f)};
 
@@ -453,10 +459,6 @@ int main()
     // or set it via the texture class
     camera_shader.setInt("texture2", 1);
 
-    // spotLight
-    light_spot_shader.use();
-    light_spot_shader.setInt("texture", 0);
-
     // render loop
     // -----------
     while (!glfwWindowShouldClose(window))
@@ -501,6 +503,8 @@ int main()
             camera_shader.setMat4("model", model);
 
             glDrawArrays(GL_TRIANGLES, 0, 36);
+
+            glBindVertexArray(0);
         }
 
         // triangle
@@ -529,7 +533,7 @@ int main()
             // render container
             glBindVertexArray(cube_VAO);
             // get number of elements in cubePositions
-            unsigned int numElements = sizeof(cubePositions) / sizeof(cubePositions[0]);
+            unsigned int numElements = 9;
 
             for (unsigned int i = 0; i < numElements; i++)
             {
@@ -538,7 +542,13 @@ int main()
                 model = glm::translate(model, cubePositions[i]);
                 float angle = 20.0f * static_cast<float>(i);
                 model = glm::rotate(model, glm::radians(angle), glm::vec3(1.0f, 0.3f, 0.5f)); // rotate the cube
+
                 camera_shader.setMat4("model", model);
+
+                if (!isModelArrayFull)
+                {
+                    modelQueue.push(model);
+                }
 
                 glDrawArrays(GL_TRIANGLES, 0, 36);
             }
@@ -565,6 +575,11 @@ int main()
             float angle = 20.0f * static_cast<float>(glfwGetTime());
             model = glm::rotate(model, glm::radians(angle), glm::vec3(1.0f, 0.3f, 0.5f)); // rotate the cube
             lightning_shader.setMat4("model", model);
+
+            if (!isModelArrayFull)
+            {
+                modelQueue.push(model);
+            }
 
             // render the cube
             glBindVertexArray(cube_only_VAO);
@@ -595,6 +610,11 @@ int main()
             model = glm::rotate(model, glm::radians(angle), glm::vec3(1.0f, 0.3f, 0.5f)); // rotate the cube
             basic_lightning_shader.setMat4("model", model);
 
+            if (!isModelArrayFull)
+            {
+                modelQueue.push(model);
+            }
+
             // render the cube
             glBindVertexArray(cube_with_normals_VAO);
             glDrawArrays(GL_TRIANGLES, 0, 36);
@@ -623,6 +643,11 @@ int main()
             float angle = 20.0f * static_cast<float>(glfwGetTime());
             model = glm::rotate(model, glm::radians(angle), glm::vec3(1.0f, 0.3f, 0.5f)); // rotate the cube
             phong_lightning_shader.setMat4("model", model);
+
+            if (!isModelArrayFull)
+            {
+                modelQueue.push(model);
+            }
 
             // render the cube
             glBindVertexArray(cube_with_normals_VAO);
@@ -669,6 +694,11 @@ int main()
             model = glm::rotate(model, glm::radians(angle), glm::vec3(1.0f, 0.3f, 0.5f)); // rotate the cube
             material_shader.setMat4("model", model);
 
+            if (!isModelArrayFull)
+            {
+                modelQueue.push(model);
+            }
+
             // render the cube
             glBindVertexArray(cube_with_normals_VAO);
             glDrawArrays(GL_TRIANGLES, 0, 36);
@@ -703,6 +733,11 @@ int main()
             float angle = 20.0f * static_cast<float>(glfwGetTime());
             model = glm::rotate(model, glm::radians(angle), glm::vec3(1.0f, 0.3f, 0.5f)); // rotate the cube
             lightning_map_shader.setMat4("model", model);
+
+            if (!isModelArrayFull)
+            {
+                modelQueue.push(model);
+            }
 
             // bind textures on corresponding texture units
             glActiveTexture(GL_TEXTURE0); // activate the texture unit first before binding texture
@@ -743,6 +778,11 @@ int main()
             float angle = 20.0f * static_cast<float>(glfwGetTime());
             model = glm::rotate(model, glm::radians(angle), glm::vec3(1.0f, 0.3f, 0.5f)); // rotate the cube
             light_directional_shader.setMat4("model", model);
+
+            if (!isModelArrayFull)
+            {
+                modelQueue.push(model);
+            }
 
             // bind textures on corresponding texture units
             glActiveTexture(GL_TEXTURE0); // activate the texture unit first before binding texture
@@ -788,14 +828,17 @@ int main()
             model = glm::rotate(model, glm::radians(angle), pos); // rotate the cube
             light_point_shader.setMat4("model", model);
 
+            if (!isModelArrayFull)
+            {
+                modelQueue.push(model);
+            }
+
             // bind textures on corresponding texture units
             glActiveTexture(GL_TEXTURE0); // activate the texture unit first before binding texture
             glBindTexture(GL_TEXTURE_2D, container_2);
 
-            glActiveTexture(GL_TEXTURE1); // activate the texture unit first before binding texture
-            glBindTexture(GL_TEXTURE_2D, container_specular);
-
-            // render the cube
+            glActiveTexture(GL_TEXTURE1);                     // activate the texture unit first before binding texture
+            glBindTexture(GL_TEXTURE_2D, container_specular); // render the cube
             glBindVertexArray(cube_with_normal_and_textures_VAO);
             glDrawArrays(GL_TRIANGLES, 0, 36);
         }
@@ -837,6 +880,11 @@ int main()
             float angle = 20.0f * static_cast<float>(glfwGetTime());
             model = glm::rotate(model, glm::radians(angle), pos); // rotate the cube
             light_spot_shader.setMat4("model", model);
+
+            if (!isModelArrayFull)
+            {
+                modelQueue.push(model);
+            }
 
             // bind textures on corresponding texture units
             glActiveTexture(GL_TEXTURE0); // activate the texture unit first before binding texture
@@ -938,6 +986,11 @@ int main()
                 model = glm::rotate(model, glm::radians(angle), glm::vec3(1.0f, 0.3f, 0.5f)); // rotate the cube
                 multiple_lights_shader.setMat4("model", model);
 
+                if (!isModelArrayFull)
+                {
+                    modelQueue.push(model);
+                }
+
                 // render the cube
                 glBindVertexArray(cube_with_normal_and_textures_VAO);
                 glDrawArrays(GL_TRIANGLES, 0, 36);
@@ -956,6 +1009,12 @@ int main()
                 model = glm::translate(model, pos + pointLightPositions[i]);
                 model = glm::scale(model, glm::vec3(0.2f)); // Make it a smaller cube
                 light_cube_shader.setMat4("model", model);
+
+                if (!isModelArrayFull)
+                {
+                    modelQueue.push(model);
+                }
+
                 glDrawArrays(GL_TRIANGLES, 0, 36);
             }
         }
@@ -976,6 +1035,11 @@ int main()
         model = glm::scale(model, glm::vec3(0.2f)); // a smaller cube
         light_cube_shader.setMat4("model", model);
 
+        if (!isModelArrayFull)
+        {
+            modelQueue.push(model);
+        }
+
         // render the cube
         glBindVertexArray(light_cube_VAO);
         glDrawArrays(GL_TRIANGLES, 0, 36);
@@ -986,9 +1050,16 @@ int main()
         model = glm::scale(model, glm::vec3(0.2f)); // a smaller cube
         light_cube_shader.setMat4("model", model);
 
+        if (!isModelArrayFull)
+        {
+            modelQueue.push(model);
+        }
+
         // render the cube
         glBindVertexArray(light_cube_VAO);
         glDrawArrays(GL_TRIANGLES, 0, 36);
+
+        isModelArrayFull = true;
 
         // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
         // -------------------------------------------------------------------------------
@@ -1021,17 +1092,17 @@ void processInput(GLFWwindow *window)
         glfwSetWindowShouldClose(window, true);
 
     if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-        camera.ProcessKeyboard(FORWARD, deltaTime);
+        camera.ProcessKeyboard(FORWARD, deltaTime, modelQueue);
     if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-        camera.ProcessKeyboard(BACKWARD, deltaTime);
+        camera.ProcessKeyboard(BACKWARD, deltaTime, modelQueue);
     if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
-        camera.ProcessKeyboard(LEFT, deltaTime);
+        camera.ProcessKeyboard(LEFT, deltaTime, modelQueue);
     if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
-        camera.ProcessKeyboard(RIGHT, deltaTime);
+        camera.ProcessKeyboard(RIGHT, deltaTime, modelQueue);
     if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS)
-        camera.ProcessKeyboard(UP, deltaTime);
+        camera.ProcessKeyboard(UP, deltaTime, modelQueue);
     if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS)
-        camera.ProcessKeyboard(DOWN, deltaTime);
+        camera.ProcessKeyboard(DOWN, deltaTime, modelQueue);
 }
 
 // glfw: whenever the window size changed (by OS or user resize) this callback function executes
