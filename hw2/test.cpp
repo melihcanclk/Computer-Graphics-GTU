@@ -16,6 +16,7 @@ void framebuffer_size_callback(GLFWwindow *window, int width, int height);
 void mouse_callback(GLFWwindow *window, double xpos, double ypos);
 void scroll_callback(GLFWwindow *window, double xoffset, double yoffset);
 void processInput(GLFWwindow *window);
+unsigned int loadTexture(const char *path);
 
 // settings
 const unsigned int SCR_WIDTH = 800;
@@ -80,6 +81,8 @@ int main()
     Shader light_cube_shader = Shader("vs/light_cube.vs", "fs/light_cube.fs");
 
     Shader material_cube_shader = Shader("vs/material.vs", "fs/material.fs");
+
+    Shader lightning_map_shader = Shader("vs/lightning_map.vs", "fs/lightning_map.fs");
 
     // set up vertex data (and buffer(s)) and configure vertex attributes
     // ------------------------------------------------------------------
@@ -218,6 +221,49 @@ int main()
         -0.5f, 0.5f, 0.5f, 0.0f, 1.0f, 0.0f,
         -0.5f, 0.5f, -0.5f, 0.0f, 1.0f, 0.0f};
 
+    float lightning_map_obj_vertices[] = {
+        // positions(3)          // normals(3)           // texture coords(2)
+        -0.5f, -0.5f, -0.5f, 0.0f, 0.0f, -1.0f, 0.0f, 0.0f,
+        0.5f, -0.5f, -0.5f, 0.0f, 0.0f, -1.0f, 1.0f, 0.0f,
+        0.5f, 0.5f, -0.5f, 0.0f, 0.0f, -1.0f, 1.0f, 1.0f,
+        0.5f, 0.5f, -0.5f, 0.0f, 0.0f, -1.0f, 1.0f, 1.0f,
+        -0.5f, 0.5f, -0.5f, 0.0f, 0.0f, -1.0f, 0.0f, 1.0f,
+        -0.5f, -0.5f, -0.5f, 0.0f, 0.0f, -1.0f, 0.0f, 0.0f,
+
+        -0.5f, -0.5f, 0.5f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f,
+        0.5f, -0.5f, 0.5f, 0.0f, 0.0f, 1.0f, 1.0f, 0.0f,
+        0.5f, 0.5f, 0.5f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f,
+        0.5f, 0.5f, 0.5f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f,
+        -0.5f, 0.5f, 0.5f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f,
+        -0.5f, -0.5f, 0.5f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f,
+
+        -0.5f, 0.5f, 0.5f, -1.0f, 0.0f, 0.0f, 1.0f, 0.0f,
+        -0.5f, 0.5f, -0.5f, -1.0f, 0.0f, 0.0f, 1.0f, 1.0f,
+        -0.5f, -0.5f, -0.5f, -1.0f, 0.0f, 0.0f, 0.0f, 1.0f,
+        -0.5f, -0.5f, -0.5f, -1.0f, 0.0f, 0.0f, 0.0f, 1.0f,
+        -0.5f, -0.5f, 0.5f, -1.0f, 0.0f, 0.0f, 0.0f, 0.0f,
+        -0.5f, 0.5f, 0.5f, -1.0f, 0.0f, 0.0f, 1.0f, 0.0f,
+
+        0.5f, 0.5f, 0.5f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f,
+        0.5f, 0.5f, -0.5f, 1.0f, 0.0f, 0.0f, 1.0f, 1.0f,
+        0.5f, -0.5f, -0.5f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f,
+        0.5f, -0.5f, -0.5f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f,
+        0.5f, -0.5f, 0.5f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f,
+        0.5f, 0.5f, 0.5f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f,
+
+        -0.5f, -0.5f, -0.5f, 0.0f, -1.0f, 0.0f, 0.0f, 1.0f,
+        0.5f, -0.5f, -0.5f, 0.0f, -1.0f, 0.0f, 1.0f, 1.0f,
+        0.5f, -0.5f, 0.5f, 0.0f, -1.0f, 0.0f, 1.0f, 0.0f,
+        0.5f, -0.5f, 0.5f, 0.0f, -1.0f, 0.0f, 1.0f, 0.0f,
+        -0.5f, -0.5f, 0.5f, 0.0f, -1.0f, 0.0f, 0.0f, 0.0f,
+        -0.5f, -0.5f, -0.5f, 0.0f, -1.0f, 0.0f, 0.0f, 1.0f,
+
+        -0.5f, 0.5f, -0.5f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f,
+        0.5f, 0.5f, -0.5f, 0.0f, 1.0f, 0.0f, 1.0f, 1.0f,
+        0.5f, 0.5f, 0.5f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f,
+        0.5f, 0.5f, 0.5f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f,
+        -0.5f, 0.5f, 0.5f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f,
+        -0.5f, 0.5f, -0.5f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f};
     // world space positions of our cubes
     glm::vec3 cubePositions[] = {
         glm::vec3(0.0f, 0.0f, 0.0f),
@@ -287,6 +333,36 @@ int main()
     // normal attribute
     glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void *)(3 * sizeof(float))); // tell opengl how to interpret vertex data
     glEnableVertexAttribArray(1);                                                                    // enable vertex attribute
+
+    // lightning map obj
+    unsigned int lightning_map_obj_VBO, lightning_map_obj_VAO;
+    glGenVertexArrays(1, &lightning_map_obj_VAO);
+    glGenBuffers(1, &lightning_map_obj_VBO); // generate buffer id
+
+    glBindVertexArray(lightning_map_obj_VAO);
+
+    glBindBuffer(GL_ARRAY_BUFFER, lightning_map_obj_VBO); // bind buffer to GL_ARRAY_BUFFER
+    glBufferData(GL_ARRAY_BUFFER, sizeof(lightning_map_obj_vertices), lightning_map_obj_vertices, GL_STATIC_DRAW);
+
+    // position attribute
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void *)0); // tell opengl how to interpret vertex data
+    glEnableVertexAttribArray(0);                                                  // enable vertex attribute
+
+    // normal attribute
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void *)(3 * sizeof(float))); // tell opengl how to interpret vertex data
+    glEnableVertexAttribArray(1);                                                                    // enable vertex attribute
+
+    // texture coord attribute
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void *)(6 * sizeof(float))); // tell opengl how to interpret vertex data
+    glEnableVertexAttribArray(2);                                                                    // enable vertex attribute
+
+    unsigned int diffuseMap = loadTexture("assets/container2.png");
+    unsigned int specularMap = loadTexture("assets/container2_specular.png");
+
+    // shader configuration
+    lightning_map_shader.use();
+    lightning_map_shader.setInt("material.diffuse", 0);
+    lightning_map_shader.setInt("material.specular", 1);
 
     // load and create a texture
     // -------------------------
@@ -394,8 +470,10 @@ int main()
             // calculate the model matrix for each object and pass it to shader before drawing
             model = glm::mat4(1.0f); // make sure to initialize matrix to identity matrix first
             model = glm::translate(model, cubePositions[i]);
-            float angle = static_cast<float>(glfwGetTime()) * 20.0f;
+            float angle = static_cast<float>(glfwGetTime()) * 30.0f;
             model = glm::rotate(model, glm::radians(angle), glm::vec3(0.5f, 1.0f, 0.0f)); // rotate around (0.5f, 1.0f, 0.0f)
+            // scale cubes differently
+            model = glm::scale(model, glm::vec3(0.1f * (i + 1)));
             ourShader.setMat4("model", model);
 
             glDrawArrays(GL_TRIANGLES, 0, 36);
@@ -436,6 +514,42 @@ int main()
 
         // render the cube
         glBindVertexArray(material_cube_VAO);
+        glDrawArrays(GL_TRIANGLES, 0, 36);
+
+        // render lightning map obj
+        lightning_map_shader.use();
+        lightning_map_shader.setVec3("light.position", lightPos);
+        lightning_map_shader.setVec3("viewPos", camera.Position);
+
+        // light properties
+        lightning_map_shader.setVec3("light.ambient", 0.2f, 0.2f, 0.2f);
+        lightning_map_shader.setVec3("light.diffuse", 0.5f, 0.5f, 0.5f);
+        lightning_map_shader.setVec3("light.specular", 1.0f, 1.0f, 1.0f);
+
+        // material properties
+        lightning_map_shader.setFloat("material.shininess", 32.0f);
+
+        // view/projection transformations
+        projection = glm::perspective(glm::radians(camera.Zoom), static_cast<float>(SCR_WIDTH) / static_cast<float>(SCR_HEIGHT), 0.1f, 100.0f);
+        view = camera.GetViewMatrix();
+        lightning_map_shader.setMat4("projection", projection);
+        lightning_map_shader.setMat4("view", view);
+
+        // world transformation
+        model = glm::mat4(1.0f);
+        model = glm::translate(model, glm::vec3(4.0f, 0.0f, 0.0));
+        lightning_map_shader.setMat4("model", model);
+
+        // bind diffuse map
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, diffuseMap);
+
+        // bind specular map
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, specularMap);
+
+        // render the cube
+        glBindVertexArray(lightning_map_obj_VAO);
         glDrawArrays(GL_TRIANGLES, 0, 36);
 
         // render light cube
@@ -520,4 +634,43 @@ void mouse_callback(GLFWwindow *window, double xposIn, double yposIn)
 void scroll_callback(GLFWwindow *window, double xoffset, double yoffset)
 {
     camera.ProcessMouseScroll(static_cast<float>(yoffset));
+}
+
+// utility function for loading a 2D texture from file
+// ---------------------------------------------------
+unsigned int loadTexture(char const *path)
+{
+    unsigned int textureID;
+    glGenTextures(1, &textureID);
+
+    int width, height, nrComponents;
+    unsigned char *data = stbi_load(path, &width, &height, &nrComponents, 0);
+    if (data)
+    {
+        GLenum format;
+        if (nrComponents == 1)
+            format = GL_RED;
+        else if (nrComponents == 3)
+            format = GL_RGB;
+        else if (nrComponents == 4)
+            format = GL_RGBA;
+
+        glBindTexture(GL_TEXTURE_2D, textureID);
+        glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, data);
+        glGenerateMipmap(GL_TEXTURE_2D);
+
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+        stbi_image_free(data);
+    }
+    else
+    {
+        std::cout << "Texture failed to load at path: " << path << std::endl;
+        stbi_image_free(data);
+    }
+
+    return textureID;
 }
