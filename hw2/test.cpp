@@ -76,7 +76,7 @@ int main()
     glEnable(GL_DEPTH_TEST);
     // build and compile our shader zprogram
     // ------------------------------------
-    Shader shader("vs/shader.vs", "fs/shader.fs");
+    Shader triangle_shader("vs/shader.vs", "fs/shader.fs");
     Shader camera_shader("vs/camera.vs", "fs/camera.fs");
     Shader light_cube_shader = Shader("vs/light_cube.vs", "fs/light_cube.fs");
     Shader material_cube_shader = Shader("vs/material.vs", "fs/material.fs");
@@ -88,10 +88,14 @@ int main()
     // ------------------------------------------------------------------
 
     float triangle_vertices[] = {
-        // positions         // colors
-        0.5f, -0.5f, 0.0f, 1.0f, 0.0f, 0.0f,  // bottom right
-        -0.5f, -0.5f, 0.0f, 0.0f, 1.0f, 0.0f, // bottom left
-        0.0f, 0.5f, 0.0f, 0.0f, 0.0f, 1.0f    // top
+        // positions of triangle
+        0.8f, -0.7f, 0.0f,   // top
+        0.9f, -0.9f, 0.0f,  // bottom right
+        0.7f, -0.9f, 0.0f, // bottom left
+    };
+    unsigned int triangle_indices[] = {
+        // note that we start from 0!
+        0, 1, 2, // first triangle
     };
 
     float vertices[] = {
@@ -285,24 +289,28 @@ int main()
         glm::vec3(1.5f, 0.2f, -1.5f),
         glm::vec3(-1.3f, 1.0f, -1.5f)};
 
-    // triangle
-    unsigned int triangle_VBO, triangle_VAO;
+    // ------------------ triangle ------------------
+    unsigned int triangle_VBO, triangle_VAO, triangle_EBO;
     glGenVertexArrays(1, &triangle_VAO);
     glGenBuffers(1, &triangle_VBO); // generate buffer id
+    glGenBuffers(1, &triangle_EBO); // generate buffer id
 
     glBindVertexArray(triangle_VAO);
 
-    glBindBuffer(GL_ARRAY_BUFFER, triangle_VBO);                                                 // bind buffer to GL_ARRAY_BUFFER
-    glBufferData(GL_ARRAY_BUFFER, sizeof(triangle_vertices), triangle_vertices, GL_STATIC_DRAW); // copy vertices to buffer
+    glBindBuffer(GL_ARRAY_BUFFER, triangle_VBO); // bind buffer to GL_ARRAY_BUFFER
+    glBufferData(GL_ARRAY_BUFFER, sizeof(triangle_vertices), triangle_vertices, GL_STATIC_DRAW);
 
-    // position attribute
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, triangle_EBO);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(triangle_indices), triangle_indices, GL_STATIC_DRAW);
+
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void *)0); // tell opengl how to interpret vertex data
     glEnableVertexAttribArray(0);                                                  // enable vertex attribute
 
-    // color attribute
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void *)(3 * sizeof(float))); // tell opengl how to interpret vertex data
-    glEnableVertexAttribArray(1);                                                                    // enable vertex attribute
+    glBindBuffer(GL_ARRAY_BUFFER, 0); // unbind buffer
 
+    glBindVertexArray(0); // unbind vertex array
+
+    // ------------------ rectangle ------------------
     unsigned int VBO, VAO;
     glGenVertexArrays(1, &VAO);
     glGenBuffers(1, &VBO); // generate buffer id
@@ -324,6 +332,7 @@ int main()
     glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void *)(5 * sizeof(float))); // tell opengl how to interpret vertex data
     glEnableVertexAttribArray(2);                                                                    // enable vertex attribute
 
+    // ------------------ light source ------------------
     // light cube
     unsigned int light_cube_VBO, light_cube_VAO;
     glGenVertexArrays(1, &light_cube_VAO);
@@ -342,6 +351,7 @@ int main()
     glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void *)(3 * sizeof(float))); // tell opengl how to interpret vertex data
     glEnableVertexAttribArray(1);                                                                    // enable vertex attribute
 
+    // ------------------ material cube ------------------
     // material cube
     unsigned int material_cube_VBO, material_cube_VAO;
     glGenVertexArrays(1, &material_cube_VAO);
@@ -360,6 +370,7 @@ int main()
     glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void *)(3 * sizeof(float))); // tell opengl how to interpret vertex data
     glEnableVertexAttribArray(1);                                                                    // enable vertex attribute
 
+    // ------------------ lightning map obj ------------------
     // lightning map obj
     unsigned int lightning_map_obj_VBO, lightning_map_obj_VAO;
     glGenVertexArrays(1, &lightning_map_obj_VAO);
@@ -390,6 +401,7 @@ int main()
     lightning_map_shader.setInt("material.diffuse", 0);
     lightning_map_shader.setInt("material.specular", 1);
 
+    // ------------------ phong cube ------------------
     // material cube
     unsigned int phong_cube_VBO, phong_cube_VAO;
     glGenVertexArrays(1, &phong_cube_VAO);
@@ -522,6 +534,12 @@ int main()
 
             glDrawArrays(GL_TRIANGLES, 0, 36);
         }
+
+        // triangle
+        triangle_shader.use();
+        triangle_shader.setVec3("ourColor", 1.0f, 0.5f, 0.2f);
+        glBindVertexArray(triangle_VAO);
+        glDrawElements(GL_TRIANGLES, 3, GL_UNSIGNED_INT, 0);
 
         // render material cube
         material_cube_shader.use();
