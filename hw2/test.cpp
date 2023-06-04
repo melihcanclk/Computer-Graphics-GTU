@@ -84,7 +84,10 @@ int main()
     Shader phong_shader = Shader("vs/phong_shading.vs", "fs/phong_shading.fs");
 
     // directional light
-    Shader lightning_map_shader = Shader("vs/directional_light.vs", "fs/directional_light.fs");
+    // Shader lightning_map_shader = Shader("vs/directional_light.vs", "fs/directional_light.fs");
+
+    // point light
+    Shader lightning_map_shader = Shader("vs/point_light.vs", "fs/point_light.fs");
 
     // set up vertex data (and buffer(s)) and configure vertex attributes
     // ------------------------------------------------------------------
@@ -636,7 +639,7 @@ int main()
         // glBindVertexArray(lightning_map_obj_VAO);
         // glDrawArrays(GL_TRIANGLES, 0, 36);
 
-        // render lightning map obj 2
+        // render lightning map obj with directional light
         // lightning_map_shader.use();
         // lightning_map_shader.setVec3("light.direction", 0.2f, 1.0f, -0.3f);
         // lightning_map_shader.setVec3("viewPos", camera.Position);
@@ -672,16 +675,56 @@ int main()
         // glBindVertexArray(lightning_map_obj_VAO);
         // glDrawArrays(GL_TRIANGLES, 0, 36);
 
-        // render light cube
-        // light_cube_shader.use();
-        // light_cube_shader.setMat4("projection", projection);
-        // light_cube_shader.setMat4("view", view);
-        // model = glm::mat4(1.0f);
-        // model = glm::translate(model, lightPos);
-        // light_cube_shader.setMat4("model", model);
+        // render lightning obj with point light
+        lightning_map_shader.use();
+        lightning_map_shader.setVec3("light.position", lightPos);
+        lightning_map_shader.setVec3("viewPos", camera.Position);
 
-        // glBindVertexArray(light_cube_VAO);
-        // glDrawArrays(GL_TRIANGLES, 0, 36);
+        // light properties
+        // light properties
+        lightning_map_shader.setVec3("light.ambient", 0.2f, 0.2f, 0.2f);
+        lightning_map_shader.setVec3("light.diffuse", 0.5f, 0.5f, 0.5f);
+        lightning_map_shader.setVec3("light.specular", 1.0f, 1.0f, 1.0f);
+        lightning_map_shader.setFloat("light.constant", 1.0f);
+        lightning_map_shader.setFloat("light.linear", 0.09f);
+        lightning_map_shader.setFloat("light.quadratic", 0.032f);
+
+        // material properties
+        lightning_map_shader.setFloat("material.shininess", 32.0f);
+
+        // view/projection transformations
+        projection = glm::perspective(glm::radians(camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
+        view = camera.GetViewMatrix();
+        lightning_map_shader.setMat4("projection", projection);
+        lightning_map_shader.setMat4("view", view);
+
+        // world transformation
+        model = glm::mat4(1.0f);
+        lightning_map_shader.setMat4("model", model);
+
+        // bind diffuse map
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, diffuseMap);
+        // bind specular map
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, specularMap);
+
+        // render the cube
+        glBindVertexArray(lightning_map_obj_VAO);
+        glDrawArrays(GL_TRIANGLES, 0, 36);
+
+        // render light cube
+        light_cube_shader.use();
+        light_cube_shader.setMat4("projection", projection);
+        light_cube_shader.setMat4("view", view);
+        model = glm::mat4(1.0f);
+        model = glm::translate(model, lightPos);
+        light_cube_shader.setMat4("model", model);
+
+        glBindVertexArray(light_cube_VAO);
+        glDrawArrays(GL_TRIANGLES, 0, 36);
+
+        
 
         // render phong cube
         phong_shader.use();
