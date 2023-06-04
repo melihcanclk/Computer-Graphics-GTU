@@ -22,7 +22,7 @@ enum Camera_Movement
 // Default camera values
 const float YAW = -90.0f;
 const float PITCH = 0.0f;
-const float SPEED = 0.5f;
+const float SPEED = 4.5f;
 const float SENSITIVITY = 0.1f;
 const float ZOOM = 75.0f;
 
@@ -124,37 +124,33 @@ public:
                         Position.z = modelPos.z - maxScale - tolerance;
                 }
             }
-            else
-            {
-
-                if (Position.x > limit_max - tolerance)
-                    Position.x = limit_max - tolerance;
-                if (Position.x < limit_min_other + tolerance)
-                    Position.x = limit_min_other + tolerance;
-                if (Position.y > limit_max - tolerance)
-                    Position.y = limit_max - tolerance;
-                if (Position.y < limit_min_y + tolerance)
-                    Position.y = limit_min_y + tolerance;
-                if (Position.z > limit_max - tolerance)
-                    Position.z = limit_max - tolerance;
-                if (Position.z < limit_min_other + tolerance)
-                    Position.z = limit_min_other + tolerance;
-
-                if (direction == FORWARD)
-                    Position += Front * velocity;
-                if (direction == BACKWARD)
-                    Position -= Front * velocity;
-                if (direction == LEFT)
-                    Position -= Right * velocity;
-                if (direction == RIGHT)
-                    Position += Right * velocity;
-                if (direction == UP)
-                    Position += Up * velocity;
-                if (direction == DOWN)
-                    Position -= Up * velocity;
-            }
         }
 
+        if (Position.x > limit_max - tolerance)
+            Position.x = limit_max - tolerance;
+        if (Position.x < limit_min_other + tolerance)
+            Position.x = limit_min_other + tolerance;
+        if (Position.y > limit_max - tolerance)
+            Position.y = limit_max - tolerance;
+        if (Position.y < limit_min_y + tolerance)
+            Position.y = limit_min_y + tolerance;
+        if (Position.z > limit_max - tolerance)
+            Position.z = limit_max - tolerance;
+        if (Position.z < limit_min_other + tolerance)
+            Position.z = limit_min_other + tolerance;
+
+        if (direction == FORWARD)
+            Position += Front * velocity;
+        if (direction == BACKWARD)
+            Position -= Front * velocity;
+        if (direction == LEFT)
+            Position -= Right * velocity;
+        if (direction == RIGHT)
+            Position += Right * velocity;
+        if (direction == UP)
+            Position += Up * velocity;
+        if (direction == DOWN)
+            Position -= Up * velocity;
         // std::cout << Position.x << " " << Position.y << " " << Position.z << std::endl;
     }
 

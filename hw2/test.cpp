@@ -470,7 +470,7 @@ int main()
         lastFrame = currentFrame;
 
         // print fps
-        // std::cout << 1 / deltaTime << std::endl;
+        std::cout << 1 / deltaTime << std::endl;
 
         // input
         // -----
