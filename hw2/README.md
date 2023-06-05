@@ -1,3 +1,21 @@
+# Project Description
+This project is a simple OpenGL project that user can move in a 3D space without any collision and can see a 3D model in the space.\
+
+# Project Structure
+- test.cpp: the main file of the project
+- shaders folder: contains the shaders used in the project
+- models folder: contains the 3D model used in the project
+- assets folder: contains the textures used in the project
+- vs folder: contains the vertex shaders
+- fs folder: contains the fragment shaders
+- makefile: the makefile of the project
+- glm folder: the glm library that is used in the project for matrix and vector operations (already included)
+- glad.h and glad.c: the glad files
+- stb_image.h: the stb_image file that is used to load textures
+- camera.h: the camera class
+- mesh.h: the mesh class
+- model.h: the model class
+
 # how to build the project
 ```bash
 make
