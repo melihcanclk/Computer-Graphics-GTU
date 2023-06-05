@@ -1,12 +1,10 @@
 #include "glad.h"
 #include <GLFW/glfw3.h>
 
-#define STB_IMAGE_IMPLEMENTATION
-#include "stb_image.h"
-
 #include "glm/glm/gtc/type_ptr.hpp"
 
 #include "shaders/shader_m.h"
+#include "model.h"
 
 #include "camera.h"
 
@@ -82,6 +80,8 @@ int main()
         return -1;
     }
 
+    stbi_set_flip_vertically_on_load(true);
+
     // configure global opengl state
     // -----------------------------
     glEnable(GL_DEPTH_TEST);
@@ -110,6 +110,11 @@ int main()
     Shader light_spot_shader("vs/light_spot.vs", "fs/light_spot.fs");
 
     Shader multiple_lights_shader("vs/multiple_lights.vs", "fs/multiple_lights.fs");
+
+    Shader model_shader("vs/model.vs", "fs/model.fs");
+
+    Model ourModel("models/backpack/backpack.obj");
+    // glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
     // set up vertex data (and buffer(s)) and configure vertex attributes
     // ------------------------------------------------------------------
@@ -1017,6 +1022,34 @@ int main()
 
                 glDrawArrays(GL_TRIANGLES, 0, 36);
             }
+        }
+
+        // model draw
+        {
+            model_shader.use();
+
+            // view/projection transformations
+            glm::mat4 projection = glm::perspective(
+                glm::radians(camera.Zoom),
+                static_cast<float>(SCR_WIDTH) / static_cast<float>(SCR_HEIGHT),
+                0.1f, 100.0f);
+
+            glm::mat4 view = camera.GetViewMatrix();
+            model_shader.setMat4("projection", projection);
+            model_shader.setMat4("view", view);
+
+            // render the loaded model
+            glm::mat4 model = glm::mat4(1.0f);
+            model = glm::translate(model, glm::vec3(10.0f, 3.0f, 2.0f)); // translate it down so it's at the center of the scene
+            model = glm::scale(model, glm::vec3(0.2f, 0.2f, 0.2f));      // it's a bit too big for our scene, so scale it down
+            model_shader.setMat4("model", model);
+
+            if (!isModelArrayFull)
+            {
+                modelQueue.push(model);
+            }
+
+            ourModel.Draw(model_shader);
         }
 
         // light cube
